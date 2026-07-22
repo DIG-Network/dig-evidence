@@ -1,0 +1,93 @@
+name: Publish to crates.io
+
+# Tag-driven release: pushing a version tag `vX.Y.Z` runs the gates, publishes to crates.io, and
+# cuts a GitHub Release. A normal push to `main` runs the gates only (see ci.yml) — it does NOT
+# publish. `workflow_dispatch` is provided so the FIRST release of this new crate can be kicked by
+# hand (a release.yml-in-the-first-PR does not auto-run on that squash-merge — the new-crate
+# first-release race). dig-evidence depends only on already-published DIG crates, so publish it
+# after its dependencies are live on crates.io.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify the package builds
+        run: cargo build --release
+
+      - name: Verify the package can be packaged
+        run: cargo package --locked
+
+      - name: Check CARGO_REGISTRY_TOKEN is set
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "CARGO_REGISTRY_TOKEN secret is not set in repository settings"
+            exit 1
+          fi
+
+      - name: Publish to crates.io
+        run: cargo publish --locked --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "dig-evidence v${{ steps.extract_version.outputs.VERSION }}"
+          body: |
+            ## dig-evidence v${{ steps.extract_version.outputs.VERSION }}
+
+            A library of ACTIVE on-chain evidence TYPES: each type knows what it proves, gathers the
+            specific on-chain information its proof needs through an injected ChainSource reader, and
+            re-verifies offline. Unforgeable by construction (private fields, gather-only), pure over
+            reads, fail-closed.
+
+            ### Installation
+            ```toml
+            [dependencies]
+            dig-evidence = "${{ steps.extract_version.outputs.VERSION }}"
+            ```
+          draft: false
+          prerelease: false
