@@ -1,0 +1,52 @@
+# dig-evidence — the DIG Network's library of ACTIVE on-chain evidence TYPES.
+#
+# One home for the evidence/proof TYPES the ecosystem produces + verifies. Each type is ACTIVE: it
+# (a) knows what it proves, (b) GATHERS the specific on-chain information its proof needs through an
+# INJECTED `ChainSource` reader (never taking an upward dependency on a node/transport), and (c)
+# re-verifies offline from its own gathered contents. Modeled byte-for-byte on `dig-did`'s
+# `prove_lineage`/`AncestryProof`: private fields (unforgeable by struct literal), gather-only
+# construction authenticated against the injected reader, pure over reads, fail-closed.
+#
+# LEVEL 20 (domain). It depends ONLY on strictly-lower crates (reference-DOWN only, Appendix B): the
+# L00 ChainSource seam + URN protocol, the L10 merkle/capsule/did primitives, and the chia-* umbrella.
+# It defines NO transport and holds NO key — the reader is injected. See SPEC.md.
+[package]
+name = "dig-evidence"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75.0"
+license = "Apache-2.0 OR MIT"
+description = "The DIG Network's library of active on-chain evidence types: each type knows what it proves, gathers the on-chain info its proof needs through an injected ChainSource reader, and re-verifies offline. Unforgeable by construction (private fields, gather-only), pure over reads, fail-closed. Ships range-inclusion, root-anchor (launcher-coin-anchored), and composite read-integrity evidence."
+repository = "https://github.com/DIG-Network/dig-evidence"
+readme = "README.md"
+keywords = ["dig", "chia", "evidence", "proof", "merkle"]
+categories = ["cryptography::cryptocurrencies"]
+
+[dependencies]
+# L00 — the injected reads-only chain seam (ChainSource + CoinRecord + SingletonLineage) and the
+# canonical URN content-verification contract (FoldedProof / gate-then-decrypt).
+dig-chainsource-interface = "0.2"
+dig-urn-protocol = "0.1"
+# L10 — the merkle inclusion-proof shape (REUSED + re-exported, never reinvented), the DataStore
+# on-chain parse (hydrate → committed root), and the DID ancestry-proof pattern (re-exported).
+# `default-features = false`: we consume ONLY the always-on `merkle` + `format` modules (the proof
+# shapes + Bytes32), so we skip the heavy `compile`/`serve` features and their guest-wasm build step.
+dig-capsule = { version = "0.5", default-features = false }
+dig-merkle = "0.4"
+dig-did = "0.4"
+# The chia-* umbrella is the byte-source-of-truth for coin / launcher types. Pinned to the 0.30
+# family the whole DIG on-chain line rides (chia-protocol 0.26).
+chia-protocol = "0.26"
+chia-wallet-sdk = "0.30"
+# The singleton launcher puzzle hash — the unforgeable identity anchor (launcher coin_id == store_id).
+chia-puzzles = "0.20"
+# Typed, catalogued error taxonomy (§6.2 stable error codes).
+thiserror = "1"
+
+[dev-dependencies]
+# The in-memory MockChainSource for authenticated gather/verify tests (the `testing` feature).
+dig-chainsource-interface = { version = "0.2", features = ["testing"] }
+# The in-process Chia simulator + spend context for building real launcher/DataStore fixtures.
+chia-puzzle-types = "0.26"
+clvm-traits = "0.26"
+anyhow = "1"
