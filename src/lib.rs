@@ -66,9 +66,13 @@ pub use dig_chainsource_interface::{ChainSource, CoinRecord, SingletonLineage};
 pub use dig_capsule::format::Bytes32 as CapsuleBytes32;
 pub use dig_capsule::merkle::{MerkleProof, ProofStep, LEAF_TAG, NODE_TAG};
 
-/// The DID ancestry-proof this crate's pattern generalises, re-exported so the singleton-lineage
-/// evidence story lives behind one import. (`dig-did`'s `prove_lineage` remains the reference impl.)
-pub use dig_did::{AncestryProof, LineageModel};
+// NOTE: `dig_did::{AncestryProof, LineageModel}` were re-exported here as a convenience. They are
+// not re-exported while `dig-did` remains on the chia-0.26 / wallet-sdk-0.30 family: this crate now
+// rides chia-0.36 / wallet-sdk-0.34 (following `dig-merkle` 0.5 + `dig-chainsource-interface` 0.3),
+// so the re-exported types carried a SECOND `Bytes32` that is not assignable to the `Bytes32` in
+// this crate's own API — the exact "one import" convenience the re-export existed to provide.
+// `dig-did::prove_lineage` remains the reference implementation this crate's pattern generalises.
+// Restore the re-export once dig-did publishes on the chia-0.36 family.
 
 /// The canonical URN content-verification contract (`FoldedProof` + the gate-then-decrypt
 /// `verify_inclusion` / `verify_and_decrypt` over injected crypto), re-exported so a consumer reaches

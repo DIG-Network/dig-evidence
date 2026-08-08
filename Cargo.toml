@@ -12,7 +12,7 @@
 # It defines NO transport and holds NO key — the reader is injected. See SPEC.md.
 [package]
 name = "dig-evidence"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75.0"
 license = "Apache-2.0 OR MIT"
@@ -25,19 +25,27 @@ categories = ["cryptography::cryptocurrencies"]
 [dependencies]
 # L00 — the injected reads-only chain seam (ChainSource + CoinRecord + SingletonLineage) and the
 # canonical URN content-verification contract (FoldedProof / gate-then-decrypt).
-dig-chainsource-interface = "0.2"
+dig-chainsource-interface = "0.3"
 dig-urn-protocol = "0.1"
-# L10 — the merkle inclusion-proof shape (REUSED + re-exported, never reinvented), the DataStore
-# on-chain parse (hydrate → committed root), and the DID ancestry-proof pattern (re-exported).
+# L10 — the merkle inclusion-proof shape (REUSED + re-exported, never reinvented) and the DataStore
+# on-chain parse (hydrate → committed root).
 # `default-features = false`: we consume ONLY the always-on `merkle` + `format` modules (the proof
 # shapes + Bytes32), so we skip the heavy `compile`/`serve` features and their guest-wasm build step.
+#
+# NOTE — `dig-did` is deliberately NOT a dependency. It was carried at 0.4 purely to re-export
+# `AncestryProof`/`LineageModel` as a convenience. dig-did 0.4 is pinned to the chia-0.26 /
+# wallet-sdk-0.30 family, so once this crate moved to chia-0.36 / wallet-sdk-0.34 (to follow
+# dig-merkle 0.5 + dig-chainsource-interface 0.3) that re-export exposed a SECOND, mutually
+# unassignable `Bytes32` on this crate's own public surface — a consumer could not pass a value from
+# the re-export into any dig-evidence API. It also duplicated the entire chia tree in every
+# downstream lock. Restore the re-export as soon as dig-did publishes on the chia-0.36 family.
+# `dig-did::prove_lineage` remains the reference impl this crate's pattern is modeled on (prose only).
 dig-capsule = { version = "0.5", default-features = false }
-dig-merkle = "0.4"
-dig-did = "0.4"
-# The chia-* umbrella is the byte-source-of-truth for coin / launcher types. Pinned to the 0.30
-# family the whole DIG on-chain line rides (chia-protocol 0.26).
-chia-protocol = "0.26"
-chia-wallet-sdk = "0.30"
+dig-merkle = "0.5"
+# The chia-* umbrella is the byte-source-of-truth for coin / launcher types. Pinned to the 0.34
+# family the whole DIG on-chain line rides (chia-protocol 0.36).
+chia-protocol = "0.36.1"
+chia-wallet-sdk = "0.34"
 # The singleton launcher puzzle hash — the unforgeable identity anchor (launcher coin_id == store_id).
 chia-puzzles = "0.20"
 # Typed, catalogued error taxonomy (§6.2 stable error codes).
@@ -45,8 +53,8 @@ thiserror = "1"
 
 [dev-dependencies]
 # The in-memory MockChainSource for authenticated gather/verify tests (the `testing` feature).
-dig-chainsource-interface = { version = "0.2", features = ["testing"] }
+dig-chainsource-interface = { version = "0.3", features = ["testing"] }
 # The in-process Chia simulator + spend context for building real launcher/DataStore fixtures.
-chia-puzzle-types = "0.26"
-clvm-traits = "0.26"
+chia-puzzle-types = "0.36.1"
+clvm-traits = "0.36.1"
 anyhow = "1"
