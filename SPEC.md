@@ -121,7 +121,12 @@ downgraded to a success.
 ## 7. Level + dependencies
 
 `dig-evidence` is a LEVEL 20 (domain) crate. It depends ONLY on strictly-lower crates (reference-DOWN
-only): L00 `dig-chainsource-interface` + `dig-urn-protocol`, L10 `dig-capsule` + `dig-merkle` +
-`dig-did`, and the `chia-*` umbrella. It MUST NOT add a same-level (L20) or upward edge; a shared type
-is exposed by re-export, never by an illegal edge. Consumers depend on JUST `dig-evidence` for the
-evidence surface (the reused proof/coin shapes are re-exported).
+only): L00 `dig-chainsource-interface` + `dig-urn-protocol`, L10 `dig-capsule` + `dig-merkle`, and the
+`chia-*` umbrella. It MUST NOT add a same-level (L20) or upward edge; a shared type is exposed by
+re-export, never by an illegal edge. Consumers depend on JUST `dig-evidence` for the evidence surface
+(the reused proof/coin shapes are re-exported).
+
+Every dependency MUST resolve to a SINGLE `chia-*` generation (currently `chia-protocol` 0.36 /
+`chia-wallet-sdk` 0.34). A dependency carried only to re-export a type MUST be dropped rather than
+allowed to duplicate the `chia-*` tree: two generations in one graph put two mutually unassignable
+`Bytes32` types on this crate's public surface, which defeats the single-import guarantee above.
