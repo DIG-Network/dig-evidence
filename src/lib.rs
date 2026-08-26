@@ -68,7 +68,7 @@ pub use dig_capsule::merkle::{MerkleProof, ProofStep, LEAF_TAG, NODE_TAG};
 
 // NOTE: `dig_did::{AncestryProof, LineageModel}` were re-exported here as a convenience. They are
 // not re-exported while `dig-did` remains on the chia-0.26 / wallet-sdk-0.30 family: this crate now
-// rides chia-0.36 / wallet-sdk-0.34 (following `dig-merkle` 0.5 + `dig-chainsource-interface` 0.3),
+// rides chia-0.36 / wallet-sdk-0.36 (following `dig-merkle` 0.9 + `dig-chainsource-interface` 0.3),
 // so the re-exported types carried a SECOND `Bytes32` that is not assignable to the `Bytes32` in
 // this crate's own API — the exact "one import" convenience the re-export existed to provide.
 // `dig-did::prove_lineage` remains the reference implementation this crate's pattern generalises.
